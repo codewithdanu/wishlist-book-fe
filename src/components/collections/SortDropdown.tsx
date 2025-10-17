@@ -10,7 +10,7 @@ interface Props {
 const sortOptions = [
   { label: "Latest", value: "latest" },
   { label: "Oldest", value: "oldest" },
-  { label: "Most Popular", value: "popular" },
+  // { label: "Most Popular", value: "popular" },
   { label: "Most Rated", value: "rated" },
 ];
 
