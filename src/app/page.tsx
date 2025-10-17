@@ -182,7 +182,7 @@ export default async function HomePage() {
                       {author.books.length ?? 0} books have been published
                     </p>
                     <Link
-                      href={`/authors/${author.id}`}
+                      href={`/collections?authors=${author.name}`}
                       className="text-center text-[12px] btn bg-textColor text-lightMode focus:ring-textColor/50 mt-16"
                     >
                       Read Book Series

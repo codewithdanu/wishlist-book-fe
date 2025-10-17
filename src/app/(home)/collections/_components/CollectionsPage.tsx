@@ -42,6 +42,7 @@ export default function CollectionsPage() {
   // 🧭 Ambil initial value dari URL
   const initialSearch = searchParams.get("search") ?? "";
   const initialGenres = searchParams.get("genres")?.split(",") ?? [];
+  const initialAuthors = searchParams.get("authors")?.split(",") ?? [];
   const initialLanguages = searchParams.get("languages")?.split(",") ?? [];
   const initialSort = searchParams.get("sort") ?? "";
   const initialPage = Number(searchParams.get("page") ?? 1);
@@ -51,6 +52,7 @@ export default function CollectionsPage() {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [search, setSearch] = useState(initialSearch);
   const [selectedGenres, setSelectedGenres] = useState<string[]>(initialGenres);
+  const [selectedAuthors, setSelectedAuthors] = useState<string[]>(initialAuthors);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(initialLanguages);
   const [sort, setSort] = useState<string>(initialSort);
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
@@ -63,12 +65,13 @@ export default function CollectionsPage() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (selectedGenres.length > 0) params.set("genres", selectedGenres.join(","));
+    if (selectedAuthors.length > 0) params.set("authors", selectedAuthors.join(","));
     if (selectedLanguages.length > 0) params.set("languages", selectedLanguages.join(","));
     if (sort) params.set("sort", sort);
     if (currentPage > 1) params.set("page", currentPage.toString());
 
     router.replace(`${pathname}?${params.toString()}`);
-  }, [search, selectedGenres, selectedLanguages, sort, currentPage, pathname, router]);
+  }, [search, selectedGenres, selectedAuthors, selectedLanguages, sort, currentPage, pathname, router]);
 
   // Fetch genres
   useEffect(() => {
@@ -90,6 +93,7 @@ export default function CollectionsPage() {
         const params = new URLSearchParams();
         if (search) params.append("search", search);
         selectedGenres.forEach((g) => params.append("genres[]", g));
+        selectedAuthors.forEach((a) => params.append("authors[]", a));
         selectedLanguages.forEach((l) => params.append("languages[]", l));
         if (sort) params.append("sort", sort);
         params.append("page", currentPage.toString());
@@ -107,7 +111,7 @@ export default function CollectionsPage() {
     };
 
     fetchBooks();
-  }, [search, selectedGenres, selectedLanguages, sort, currentPage]);
+  }, [search, selectedGenres, selectedAuthors, selectedLanguages, sort, currentPage]);
 
   const startIndex = (currentPage - 1) * perPage + 1;
   const endIndex = Math.min(currentPage * perPage, totalBooks);
