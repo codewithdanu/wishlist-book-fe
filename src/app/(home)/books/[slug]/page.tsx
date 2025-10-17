@@ -135,7 +135,7 @@ export default function DetailPage() {
 
                       <div className="flex items-center justify-start space-x-3 mb-3">
                         <Link
-                          href="https://wa.me/?text=https://novex.web.app/detail.html"
+                          href="https://wa.me/?text=https://wishlist-book-fe.vercel.app/detail.html"
                           target="_blank"
                           className="text-textColor hover:text-mainColor"
                           aria-label="Share to WhatsApp"
@@ -143,7 +143,7 @@ export default function DetailPage() {
                           <MessageCircle className="w-5 h-5" />
                         </Link>
                         <Link
-                          href="https://www.instagram.com/?url=https://novex.web.app/detail.html"
+                          href="https://www.instagram.com/?url=https://wishlist-book-fe.vercel.app/detail.html"
                           target="_blank"
                           className="text-textColor hover:text-mainColor"
                           aria-label="Share to Instagram"
@@ -151,7 +151,7 @@ export default function DetailPage() {
                           <Instagram className="w-5 h-5" />
                         </Link>
                         <Link
-                          href="https://twitter.com/intent/tweet?text=Harry%20Potter%20and%20The%20Cursed%20Child&url=https://novex.web.app/detail.html"
+                          href="https://twitter.com/intent/tweet?text=Harry%20Potter%20and%20The%20Cursed%20Child&url=https://wishlist-book-fe.vercel.app/detail.html"
                           target="_blank"
                           className="text-textColor hover:text-mainColor"
                           aria-label="Share to X/Twitter"
@@ -159,7 +159,7 @@ export default function DetailPage() {
                           <Twitter className="w-5 h-5" />
                         </Link>
                         <Link
-                          href="https://www.facebook.com/sharer.php?u=https://novex.web.app/detail.html"
+                          href="https://www.facebook.com/sharer.php?u=https://wishlist-book-fe.vercel.app/detail.html"
                           target="_blank"
                           className="text-textColor hover:text-mainColor"
                           aria-label="Share to Facebook"
