@@ -1,6 +1,9 @@
+"use client";
+
 import { API_BASE_URL } from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
+import { Star } from "lucide-react";
 
 interface Genre {
   id: number;
@@ -32,7 +35,10 @@ export default function BookGrid({ books }: BookGridProps) {
           height={400}
           className="mb-6 opacity-80"
         />
-        <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: "georgia, serif" }}>
+        <h3
+          className="text-2xl font-bold mb-2"
+          style={{ fontFamily: "georgia, serif" }}
+        >
           Book Not Found
         </h3>
         <p className="text-gray-500 max-w-md">
@@ -42,62 +48,62 @@ export default function BookGrid({ books }: BookGridProps) {
       </div>
     );
   }
-  
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
       {books.map((book) => (
         <Link
           key={book.id}
           href={`/books/${book.slug}`}
-          className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col"
+          className="hover:-translate-y-2 duration-500"
         >
           {/* Cover */}
           <Image
             width={300}
             height={400}
-            className="w-full h-64 object-cover"
+            className="w-full rounded"
             src={`${API_BASE_URL}/${book.image}`}
             alt={book.title}
           />
 
-          {/* Info */}
-          <div className="p-4 flex flex-col flex-1">
-            <h5
-              className="text-lg font-semibold line-clamp-2"
-              style={{ fontFamily: "var(--font-urbanist-semibold)" }}
-            >
-              {book.title}
-            </h5>
+          {/* Title */}
+          <h5 className="font-urbanistSemibold text-[18px] mt-2.5 line-clamp-2">
+            {book.title}
+          </h5>
 
-            <p className="text-gray-600 mt-1 mb-2 text-sm line-clamp-1">
-              {book.author.name}
-            </p>
+          {/* Author */}
+          <p className="text-textColor/80 mt-1.5 mb-2.5 text-sm line-clamp-1">
+            {book.author?.name}
+          </p>
 
-            {/* Genre Badges */}
-            {book.genres && book.genres.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
-                {book.genres.map((genre) => (
-                  <span
-                    key={genre.id}
-                    className="text-xs bg-mainColor/10 text-mainColor font-medium px-2 py-1 rounded-full"
-                  >
-                    {genre.name}
-                  </span>
-                ))}
-              </div>
-            )}
+          {/* Rating */}
+          <div className="flex mb-3">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                size={18}
+                className={`mr-1 ${
+                  i < Math.round(Number(book.ratings_avg_rating))
+                    ? "fill-mainColor text-mainColor"
+                    : "text-mainColor stroke-[1.5]"
+                }`}
+              />
+            ))}
+          </div>
 
-            {/* Rating */}
-            <div className="flex mt-auto">
-              {[...Array(5)].map((_, i) => (
-                <i
-                  key={i}
-                  className={`${i < Math.round(book.ratings_avg_rating) ? "fas" : "far"} fa-star mr-1`}
-                  style={{ color: "#e45f65" }}
-                ></i>
+          {/* Genres */}
+          {book.genres && book.genres.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {book.genres.map((genre) => (
+                <span
+                  key={genre.id}
+                  className="px-2.5 py-1 text-xs rounded-full bg-mainColor/10 text-mainColor font-urbanistSemibold"
+                >
+                  {genre.name}
+                </span>
               ))}
             </div>
-          </div>
+          )}
         </Link>
       ))}
     </div>

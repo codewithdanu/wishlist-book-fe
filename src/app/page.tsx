@@ -18,6 +18,7 @@ interface Book {
   author: { name: string };
   image: string;
   ratings_avg_rating: number;
+  genres: Genre[];
 }
 
 interface Author {
@@ -116,7 +117,7 @@ export default async function HomePage() {
                   <p className="text-textColor/80 mt-1.5 mb-2.5">
                     {book.author?.name}
                   </p>
-                  <div className="flex">
+                  <div className="flex mb-3">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
@@ -129,6 +130,19 @@ export default async function HomePage() {
                       />
                     ))}
                   </div>
+                  
+                  {book.genres && book.genres.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {book.genres.map((genre: { id: number; name: string }) => (
+                        <span
+                          key={genre.id}
+                          className="px-2.5 py-1 text-xs rounded-full bg-mainColor/10 text-mainColor font-urbanistSemibold"
+                        >
+                          {genre.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </Link>
               ))}
             </div>

@@ -10,43 +10,33 @@ import BookSwiper from "@/components/bookmarks/BookSwiper";
 import { api } from "@/lib/axios";
 import Cookies from "js-cookie";
 
+interface Genre {
+  id: number;
+  name: string;
+}
+
 interface Book {
   id: number;
   slug: string;
   title: string;
   image: string;
   ratings_avg_rating?: number;
-  author: {
-    name: string;
-  };
+  author: { name: string };
+  genres?: Genre[];
 }
-
-const lastReading = [
-  {
-    href: "/books/the-outsider",
-    img: "/images/books/the-outsider.jpeg",
-    title: "The Outsider",
-    author: "Stephen King",
-    rating: 4,
-  },
-  {
-    href: "/books/the-shining",
-    img: "/images/books/the-shining.jpeg",
-    title: "The Shining",
-    author: "Stephen King",
-    rating: 4,
-  },
-];
 
 export default function BookmarksPage() {
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [recommendedBooks, setRecommendedBooks] = useState<Book[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(true);
+  const [loadingRecs, setLoadingRecs] = useState(true);
 
   const savedPrevRef = useRef<HTMLButtonElement | null>(null);
   const savedNextRef = useRef<HTMLButtonElement | null>(null);
-  const lastPrevRef = useRef<HTMLButtonElement | null>(null);
-  const lastNextRef = useRef<HTMLButtonElement | null>(null);
+  const recPrevRef = useRef<HTMLButtonElement | null>(null);
+  const recNextRef = useRef<HTMLButtonElement | null>(null);
 
+  // Fetch Wishlist (Saved Books)
   useEffect(() => {
     const fetchWishlist = async () => {
       try {
@@ -56,16 +46,31 @@ export default function BookmarksPage() {
         const res = await api.get("/api/wishlist-books", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         setSavedBooks(res.data.wishlist_books);
       } catch (err) {
         console.error("Failed to load wishlist:", err);
       } finally {
-        setLoading(false);
+        setLoadingSaved(false);
       }
     };
 
     fetchWishlist();
+  }, []);
+
+  // Fetch Recommended Books
+  useEffect(() => {
+    const fetchRecommended = async () => {
+      try {
+        const res = await api.get("/api/books/recommended");
+        setRecommendedBooks(res.data.recommended_books || []);
+      } catch (err) {
+        console.error("Failed to fetch recommended books:", err);
+      } finally {
+        setLoadingRecs(false);
+      }
+    };
+
+    fetchRecommended();
   }, []);
 
   const formattedSavedBooks = savedBooks.map((book) => ({
@@ -74,6 +79,16 @@ export default function BookmarksPage() {
     title: book.title,
     author: book.author?.name ?? "-",
     rating: Math.round(book.ratings_avg_rating ?? 0),
+    genres: book.genres ?? [],
+  }));
+
+  const formattedRecommendedBooks = recommendedBooks.map((book) => ({
+    href: `/books/${book.slug}`,
+    img: `${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`,
+    title: book.title,
+    author: book.author?.name ?? "-",
+    rating: Math.round(book.ratings_avg_rating ?? 0),
+    genres: book.genres ?? [],
   }));
 
   return (
@@ -85,20 +100,20 @@ export default function BookmarksPage() {
         <main className="ml-auto container mx-5 sm:mx-auto relative z-10 mb-[100px]">
           <Navbar />
 
+          {/* Heading */}
           <div className="text-center">
             <h1 className="font-[georgia] font-bold sm:text-[50px] text-[32px]">
               Keep the story going...
             </h1>
             <p className="mt-[30px] mb-[50px] text-textColor/80">
-              Don’t let the story end just yet. Continue reading your last book <br />
-              and immerse yourself in the world of literature
+              Don’t let the story end just yet. Continue exploring the world of literature.
             </p>
           </div>
 
           <div className="w-full h-[1px] bg-textColor/50 mb-[50px]" />
 
           {/* Book Saved */}
-          <section className="mb-[100px]">
+          <div className="mb-10">
             <div className="flex justify-between mb-10">
               <h2 className="font-[georgia] font-bold text-[28px]">
                 Book Saved
@@ -121,7 +136,7 @@ export default function BookmarksPage() {
               </div>
             </div>
 
-            {loading ? (
+            {loadingSaved ? (
               <p className="text-center text-gray-500">Loading your saved books...</p>
             ) : formattedSavedBooks.length === 0 ? (
               <p className="text-center text-gray-500">No saved books yet.</p>
@@ -133,39 +148,45 @@ export default function BookmarksPage() {
                 swiperClass="book-saved-swiper"
               />
             )}
-          </section>
+          </div>
 
-          {/* Last Reading */}
-          <section>
+          {/* Other Recommended Books */}
+          <div>
             <div className="flex justify-between mb-10">
               <h2 className="font-[georgia] font-bold text-[28px]">
-                Last Reading
+                Other Recommended Books
               </h2>
               <div className="flex items-center gap-2">
                 <button
-                  ref={lastPrevRef}
+                  ref={recPrevRef}
                   className="p-1 rounded hover:bg-mainColor/10"
-                  aria-label="Prev last reading"
+                  aria-label="Prev recommended books"
                 >
                   <ChevronLeft className="text-mainColor w-5 h-5" />
                 </button>
                 <button
-                  ref={lastNextRef}
+                  ref={recNextRef}
                   className="p-1 rounded hover:bg-mainColor/10"
-                  aria-label="Next last reading"
+                  aria-label="Next recommended books"
                 >
                   <ChevronRight className="text-mainColor w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <BookSwiper
-              books={lastReading}
-              prevRef={lastPrevRef}
-              nextRef={lastNextRef}
-              swiperClass="last-reading-swiper"
-            />
-          </section>
+            {loadingRecs ? (
+              <p className="text-center text-gray-500">Loading recommended books...</p>
+            ) : formattedRecommendedBooks.length === 0 ? (
+              <p className="text-center text-gray-500">No recommendations available.</p>
+            ) : (
+              <BookSwiper
+                books={formattedRecommendedBooks}
+                prevRef={recPrevRef}
+                nextRef={recNextRef}
+                swiperClass="recommended-books-swiper"
+              />
+            )}
+          </div>
         </main>
       </div>
 
