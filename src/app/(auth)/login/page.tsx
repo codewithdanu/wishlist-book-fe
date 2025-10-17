@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { api } from "@/lib/axios";
+import { AxiosError } from "axios";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -38,9 +39,12 @@ export default function LoginPage() {
       // Redirect ke home
       router.push("/");
     } catch (err) {
-      console.error(err);
+      const axiosError = err as AxiosError<{ message?: string }>;
+      console.error(axiosError);
+
       setError(
-        err.response?.data?.message || "Login failed. Please check your credentials."
+        axiosError.response?.data?.message ||
+          "Login failed. Please check your credentials."
       );
     } finally {
       setLoading(false);

@@ -6,14 +6,15 @@ import Navbar from "@/components/Navbar";
 import GenreSwiper from "@/components/GenreSwiper";
 import StatsCounter from "@/components/StatsCounter";
 import Footer from "@/components/Footer";
-import { apiFetch } from "@/lib/api";
 import { Star } from "lucide-react";
+import { api } from "@/lib/axios";
 
-export const dynamic = "force-static"; // cache page
+export const dynamic = "force-static";
 
 interface Book {
   id: number;
   title: string;
+  slug: string;
   author: { name: string };
   image: string;
   ratings_avg_rating: number;
@@ -34,15 +35,16 @@ interface Genre {
 
 export default async function HomePage() {
   const [booksRes, authorsRes, genresRes] = await Promise.all([
-    apiFetch<{ books: Book[] }>("/api/books"),
-    apiFetch<{ authors: {data: Author[]} }>("/api/authors"),
-    apiFetch<{ genres: Genre[] }>("/api/genres"),
+    api.get<{ books: Book[] }>("/api/books"),
+    api.get<{ authors: { data: Author[] } }>("/api/authors"),
+    api.get<{ genres: Genre[] }>("/api/genres"),
   ]);
 
-  const popularBooks = booksRes.books.slice(0, 8);
-  const authors = authorsRes.authors.data;
-  const genres = genresRes.genres;
-  
+  const books = booksRes.data.books;
+  const authors = authorsRes.data.authors.data;
+  const genres = genresRes.data.genres;
+  const popularBooks = books.slice(0, 8);
+
   return (
     <>
       <div className="flex">
@@ -62,9 +64,10 @@ export default async function HomePage() {
                 Change Your Life
               </h1>
               <p className="my-[30px]">
-                Novex is an online platform that provides easy and convenient access to read novels.
-                With a diverse and continuously updated collection of novels, Novex allows users to
-                enjoy various genres and engaging stories at their fingertips.
+                Novex is an online platform that provides easy and convenient
+                access to read novels. With a diverse and continuously updated
+                collection of novels, Novex allows users to enjoy various genres
+                and engaging stories at their fingertips.
               </p>
               <Link href="/collections" className="btn text-center">
                 Explore Now

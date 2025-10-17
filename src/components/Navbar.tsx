@@ -1,42 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Search } from "lucide-react";
 import Cookies from "js-cookie";
 
-interface Notification {
+// interface Notification {
+//   id: number;
+//   title: string;
+//   message: string;
+//   time: string;
+//   read: boolean;
+// }
+
+interface User {
   id: number;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
+  name: string;
+  username: string;
+  email: string;
 }
 
 export default function Navbar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      title: "New Book Added",
-      message: "Laut Bercerita by Leila S. Chudori have been added",
-      time: "5 minutes ago",
-      read: false,
-    },
-    {
-      id: 2,
-      title: "New Book Added",
-      message: "Laut Bercerita by Leila S. Chudori have been added",
-      time: "1 hour ago",
-      read: false,
-    },
-  ]);
+  // const [notifications, setNotifications] = useState<Notification[]>([
+  //   {
+  //     id: 1,
+  //     title: "New Book Added",
+  //     message: "Laut Bercerita by Leila S. Chudori have been added",
+  //     time: "5 minutes ago",
+  //     read: false,
+  //   },
+  //   {
+  //     id: 2,
+  //     title: "New Book Added",
+  //     message: "Laut Bercerita by Leila S. Chudori have been added",
+  //     time: "1 hour ago",
+  //     read: false,
+  //   },
+  // ]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Handle search
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -56,7 +64,14 @@ export default function Navbar() {
     router.push("/login");
   };
 
-  const user = JSON.parse(localStorage.getItem("user"))
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    }
+  }, []);
 
   return (
     <nav id="navbar" className="flex justify-between items-center py-4">

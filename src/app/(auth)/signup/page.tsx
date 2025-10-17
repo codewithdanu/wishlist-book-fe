@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { api } from "@/lib/axios";
+import { AxiosError } from "axios";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -49,9 +50,12 @@ export default function RegisterPage() {
       // Redirect ke home
       router.push("/");
     } catch (err) {
-      console.error(err);
+      const axiosError = err as AxiosError<{ message?: string }>;
+      console.error(axiosError);
+
       setError(
-        err.response?.data?.message || "Registration failed. Please try again."
+        axiosError.response?.data?.message ||
+          "Registration failed. Please try again."
       );
     } finally {
       setLoading(false);

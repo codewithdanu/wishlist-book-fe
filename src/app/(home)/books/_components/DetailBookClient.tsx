@@ -20,6 +20,7 @@ import {
 import Cookies from "js-cookie";
 import { api } from "@/lib/axios";
 import { toast } from "react-hot-toast";
+import { AxiosError } from "axios";
 
 interface Author {
   id: number;
@@ -130,8 +131,8 @@ export default function DetailPage({ book }: { book: Book }) {
         toast.success("Book saved to bookmarks");
       }
     } catch (error) {
-      console.error("Failed to toggle bookmark:", error);
-      toast.error(error.response?.data?.message || "Failed to save book");
+      const axiosError = error as AxiosError<{ message?: string }>;
+      toast.error(axiosError.response?.data?.message || "Failed to save book");
     } finally {
       setLoadingSave(false);
     }

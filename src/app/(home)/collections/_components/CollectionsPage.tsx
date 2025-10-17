@@ -43,7 +43,7 @@ export default function CollectionsPage() {
   const initialSearch = searchParams.get("search") ?? "";
   const initialGenres = searchParams.get("genres")?.split(",") ?? [];
   const initialLanguages = searchParams.get("languages")?.split(",") ?? [];
-  const initialSort = searchParams.get("sort") ?? "latest";
+  const initialSort = searchParams.get("sort") ?? "";
   const initialPage = Number(searchParams.get("page") ?? 1);
 
   // 🧠 State
@@ -58,7 +58,7 @@ export default function CollectionsPage() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const perPage = 12;
 
-  // 🟡 Update URL setiap kali filter berubah
+  // Update URL setiap kali filter berubah
   useEffect(() => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -70,7 +70,7 @@ export default function CollectionsPage() {
     router.replace(`${pathname}?${params.toString()}`);
   }, [search, selectedGenres, selectedLanguages, sort, currentPage, pathname, router]);
 
-  // 🟢 Fetch genres
+  // Fetch genres
   useEffect(() => {
     const fetchGenres = async () => {
       try {
@@ -83,7 +83,7 @@ export default function CollectionsPage() {
     fetchGenres();
   }, []);
 
-  // 🟢 Fetch books setiap filter berubah
+  // Fetch books setiap filter berubah
   useEffect(() => {
     const fetchBooks = async () => {
       try {
