@@ -6,10 +6,9 @@ import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Star,
-  Heart,
   Bookmark,
   Share2,
   Instagram,
@@ -18,6 +17,9 @@ import {
   MessageCircle,
   Copy,
 } from "lucide-react";
+import Cookies from "js-cookie";
+import { api } from "@/lib/axios";
+import { toast } from "react-hot-toast";
 
 interface Author {
   id: number;
@@ -47,17 +49,91 @@ interface Book {
 export default function DetailPage({ book }: { book: Book }) {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [loadingSave, setLoadingSave] = useState(false);
+  const [authorBooks, setAuthorBooks] = useState<Book[]>([]);
 
   const languages = JSON.parse(book.languages || "[]") as string[];
   const shareUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/books/${book.slug}`;
 
+  // Cek apakah buku sudah disimpan ketika halaman pertama kali load
+  useEffect(() => {
+    const fetchSavedStatus = async () => {
+      const token = Cookies.get("token") || localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const res = await api.get("/api/wishlist-books", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const savedBooks: Book[] = res.data.wishlist_books || [];
+        const found = savedBooks.some((b) => b.id === book.id);
+        setIsSaved(found);
+      } catch (error) {
+        console.error("Failed to fetch wishlist:", error);
+      }
+    };
+
+    fetchSavedStatus();
+  }, [book.id]);
+
+  useEffect(() => {
+    const fetchAuthorBooks = async () => {
+      try {
+        const res = await api.get(`/api/authors/${book.author.id}`);
+        const books: Book[] = res.data.author?.books || [];
+        setAuthorBooks(books);
+      } catch (error) {
+        console.error("Failed to fetch author books:", error);
+      }
+    };
+    fetchAuthorBooks();
+  }, [book.author.id]);
+
+  // Copy share link
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copied to clipboard");
     } catch (err) {
       console.error("Failed to copy: ", err);
+      toast.error("Failed to copy link");
+    }
+  };
+
+  // Simpan / Hapus buku dari wishlist
+  const handleSave = async () => {
+    const token = Cookies.get("token") || localStorage.getItem("token");
+    if (!token) {
+      toast.error("You must login first");
+      return;
+    }
+
+    setLoadingSave(true);
+    try {
+      if (isSaved) {
+        await api.delete(`/api/wishlist-books/${book.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setIsSaved(false);
+        toast.success("Removed from your bookmarks");
+      } else {
+        await api.post(
+          "/api/wishlist-books",
+          { book_id: book.id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setIsSaved(true);
+        toast.success("Book saved to bookmarks");
+      }
+    } catch (error) {
+      console.error("Failed to toggle bookmark:", error);
+      toast.error(error.response?.data?.message || "Failed to save book");
+    } finally {
+      setLoadingSave(false);
     }
   };
 
@@ -65,7 +141,10 @@ export default function DetailPage({ book }: { book: Book }) {
     <>
       <head>
         <title>{book.title} | Wishlist Book</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no"
+        />
       </head>
 
       <div className="flex">
@@ -84,10 +163,12 @@ export default function DetailPage({ book }: { book: Book }) {
               alt={book.title}
             />
             <div>
-              <h1 className="font-[georgia] font-bold text-[32px] ">{book.title}</h1>
+              <h1 className="font-[georgia] font-bold text-[32px] ">
+                {book.title}
+              </h1>
 
+              {/* Rating & Save */}
               <div className="flex items-center mt-[5px] mb-5">
-                {/* Rating */}
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -96,54 +177,39 @@ export default function DetailPage({ book }: { book: Book }) {
                       fill={i < Math.round(book.ratings_avg_rating) ? "currentColor" : "none"}
                     />
                   ))}
-                  <span className="ml-1 mt-0.5 ">
+                  <span className="ml-1 mt-0.5">
                     ({book.ratings_avg_rating.toFixed(1)})
                   </span>
                 </div>
 
-                {/* Separator */}
-                {/* <span className="mx-5 w-[0.5px] h-6 bg-textColor/50" /> */}
-
-                {/* Likes */}
-                {/* <div className="flex items-center">
-                  <Heart className="w-4 h-4 text-mainColor mr-2" fill="currentColor" />
-                  <span className="flex">
-                    120 <span className=" lg:block md:hidden block ml-1">likes</span>
-                  </span>
-                </div> */}
-
-                {/* Separator */}
                 <span className="mx-5 w-[0.5px] h-6 bg-textColor/50" />
 
-                {/* Saved */}
-                <div className="flex items-center">
-                  <Bookmark className="w-4 h-4 text-mainColor mr-2" fill="currentColor" />
-                  <span className="flex">
-                    34 <span className=" lg:block md:hidden block ml-1">saved</span>
-                  </span>
-                </div>
+                {/* Bookmark button */}
+                <button
+                  onClick={handleSave}
+                  disabled={loadingSave}
+                  className={`p-3 rounded-full bg-textColor/10 hover:bg-textColor/20 transition ${
+                    isSaved ? "text-mainColor" : "text-gray-500"
+                  }`}
+                  title={isSaved ? "Remove from Saved" : "Save this book"}
+                  aria-label="Bookmark"
+                >
+                  <Bookmark
+                    className="w-[18px] h-[18px]"
+                    fill={isSaved ? "currentColor" : "none"}
+                  />
+                </button>
               </div>
 
               <p className="text-[20px] mb-[50px] ">{book.author.name}</p>
 
+              {/* Share */}
               <div className="flex lg:flex-row flex-col justify-between lg:items-center items-start">
-                {/* Actions */}
                 <div className="flex lg:order-2 order-1 xl:mr-0 mr-10 relative">
-                  {/* Bookmark */}
-                  <button
-                    type="button"
-                    className="p-3 cursor-pointer text-[20px] rounded-full bg-textColor/10"
-                    title="Bookmark"
-                    aria-label="Bookmark"
-                  >
-                    <Bookmark className="w-[18px] h-[18px]" />
-                  </button>
-
-                  {/* Share */}
                   <button
                     type="button"
                     onClick={() => setIsShareOpen((v) => !v)}
-                    className="px-2.5 cursor-po-3 text-[20px] rounded-full bg-textColor/10 mx-6 focus:outline-none"
+                    className="p-2.5 cursor-pointer text-[20px] rounded-full bg-textColor/10 mx-6 focus:outline-none"
                     title="Share"
                     aria-haspopup="menu"
                     aria-expanded={isShareOpen}
@@ -152,7 +218,6 @@ export default function DetailPage({ book }: { book: Book }) {
                     <Share2 className="w-[18px] h-[18px]" />
                   </button>
 
-                  {/* Share dropdown */}
                   {isShareOpen && (
                     <div
                       id="share-menu"
@@ -192,7 +257,6 @@ export default function DetailPage({ book }: { book: Book }) {
                         </Link>
                       </div>
 
-                      {/* Copy link */}
                       <div className="flex items-center bg-gray-100/50 rounded px-3 py-2">
                         <span className="text-xs flex-1 truncate text-textColor">{shareUrl}</span>
                         <button
@@ -207,20 +271,9 @@ export default function DetailPage({ book }: { book: Book }) {
                       </div>
                     </div>
                   )}
-
-                  {/* Like */}
-                  {/* <button
-                    type="button"
-                    className="p-3 cursor-pointer text-[20px] rounded-full bg-textColor/10 focus:outline-none"
-                    title="Like"
-                    aria-label="Like"
-                  >
-                    <Heart className="w-[18px] h-[18px]" />
-                  </button> */}
                 </div>
               </div>
 
-              {/* Divider */}
               <div className="w-full mt-[50px] h-[1px] bg-textColor/20 lg:block hidden" />
             </div>
           </div>
@@ -272,77 +325,43 @@ export default function DetailPage({ book }: { book: Book }) {
           </div>
 
          {/* Collection */}
-          <div className="bg-lightMode rounded-lg relative lg:-top-20 lg:mt-0 mt-[50px] top-0 shadow-lg px-[50px] py-[30px]">
-            <h4 className="font-semibold text-[20px] mb-[30px] ">
-              Book Collection by J.K. Rowling
-            </h4>
-            <div className="grid lg:grid-cols-2 grid-cols-1 gap-7">
-               <Link href={"/books/book-slug"} className="flex group">
-                <span className="px-5 py-3 group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode bg-readMode font-semibold text-[16px] mr-[5px]">
-                  1
-                </span>
-                <p className="px-5 py-3 group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode bg-readMode font-semibold text-[16px] w-full">
-                  Harry Potter and the Sorcerer’s Stone
-                </p>
-              </Link>
-              <Link href={"/books/book-slug"} className="flex group">
-                <span className="px-5 py-3 bg-readMode group-hover:bg-mainColor  rounded-md group-hover:text-lightMode duration-300 font-semibold text-[16px] mr-[5px]">
-                  2
-                </span>
-                <p className="px-5 py-3 bg-readMode group-hover:bg-mainColor  rounded-md group-hover:text-lightMode duration-300 font-semibold text-[16px] w-full">
-                  Harry Potter and the Chamber of Secrets
-                </p>
-              </Link>
-              <Link href={"/books/book-slug"} className="flex group">
-                <span className="px-5 py-3 group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode bg-readMode font-semibold text-[16px] mr-[5px]">
-                  3
-                </span>
-                <p className="px-5 py-3 group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode bg-readMode font-semibold text-[16px] w-full">
-                  Harry Potter and the Prisoner of Azkaban
-                </p>
-              </Link>
-              <Link href={"/books/book-slug"} className="flex group">
-                <span className="px-5 py-3 bg-readMode group-hover:bg-mainColor  rounded-md group-hover:text-lightMode duration-300 font-semibold text-[16px] mr-[5px]">
-                  4
-                </span>
-                <p className="px-5 py-3 bg-readMode group-hover:bg-mainColor  rounded-md group-hover:text-lightMode duration-300 font-semibold text-[16px] w-full">
-                  Harry Potter and the Goblet of Fire
-                </p>
-              </Link>
-              <Link href={"/books/book-slug"} className="flex group">
-                <span className="px-5 py-3 group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode bg-readMode font-semibold text-[16px] mr-[5px]">
-                  5
-                </span>
-                <p className="px-5 py-3 group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode bg-readMode font-semibold text-[16px] w-full">
-                  Harry Potter and the Order of the Phoenix
-                </p>
-              </Link>
-              <Link href={"/books/book-slug"} className="flex group">
-                <span className="px-5 py-3 bg-readMode group-hover:bg-mainColor  rounded-md group-hover:text-lightMode duration-300 font-semibold text-[16px] mr-[5px]">
-                  6
-                </span>
-                <p className="px-5 py-3 bg-readMode group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode font-semibold text-[16px] w-full">
-                  Harry Potter and the Half-Blood Prince
-                </p>
-              </Link>
-              <Link href={"/books/book-slug"} className="flex group">
-                <span className="px-5 py-3 group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode bg-readMode font-semibold text-[16px] mr-[5px]">
-                  7
-                </span>
-                <p className="px-5 py-3 group-hover:bg-mainColor  rounded-md duration-300 group-hover:text-lightMode bg-readMode font-semibold text-[16px] w-full">
-                  Harry Potter and the Deathly Hallows
-                </p>
-              </Link>
-              <Link href={"/books/book-slug"} className="flex">
-                <span className="px-5 py-3 bg-mainColor text-lightMode duration-300 font-semibold rounded-md text-[16px] mr-[5px]">
-                  8
-                </span>
-                <p className="px-5 py-3 bg-mainColor text-lightMode duration-300 font-semibold rounded-md text-[16px] w-full">
-                  Harry Potter and the Cursed Child
-                </p>
-              </Link>
+          {authorBooks.length > 0 && (
+            <div className="bg-lightMode rounded-lg relative lg:-top-20 lg:mt-0 mt-[50px] top-0 shadow-lg px-[50px] py-[30px]">
+              <h4 className="font-semibold text-[20px] mb-[30px] ">
+                Book Collection by {book.author.name}
+              </h4>
+              <div className="grid lg:grid-cols-2 grid-cols-1 gap-7">
+                {authorBooks.map((b, index) => (
+                  <Link
+                    key={b.id}
+                    href={`/books/${b.slug}`}
+                    className={`flex group ${
+                      b.id === book.id ? "bg-mainColor text-lightMode rounded-md" : ""
+                    }`}
+                  >
+                    <span
+                      className={`px-5 py-3 rounded-md font-semibold text-[16px] mr-[5px] ${
+                        b.id === book.id
+                          ? "bg-mainColor text-lightMode"
+                          : "bg-readMode group-hover:bg-mainColor group-hover:text-lightMode transition"
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                    <p
+                      className={`px-5 py-3 rounded-md font-semibold text-[16px] w-full ${
+                        b.id === book.id
+                          ? "bg-mainColor text-lightMode"
+                          : "bg-readMode group-hover:bg-mainColor group-hover:text-lightMode transition"
+                      }`}
+                    >
+                      {b.title}
+                    </p>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </main>
       </div>
 

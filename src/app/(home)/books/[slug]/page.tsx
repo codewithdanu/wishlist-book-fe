@@ -16,7 +16,7 @@ interface Book {
   short_desc: string;
   synopsis: string;
   published_at: string;
-  languages: string; // JSON array in string form
+  languages: string;
   ratings_avg_rating: number;
   author: Author;
   genres?: { id: number; name: string }[];

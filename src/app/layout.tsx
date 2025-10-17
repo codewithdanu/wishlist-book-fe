@@ -4,6 +4,7 @@ import "./globals.css";
 import Loader from "@/components/Loader";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Script from "next/script";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "Wishlist Book – Temukan Buku Favoritmu",
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <Loader />
           {children}
+          <Toaster position="top-center" />
         </ThemeProvider>
 
         <Script

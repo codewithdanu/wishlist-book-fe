@@ -53,7 +53,7 @@ export default function GenreSwiper({ genres }: { genres: Genre[] }) {
               key={genre.id}
               className="swiper-slide hover:-translate-y-2 duration-500"
             >
-              <Link href={`/collections?genres=${genre.name}`} className="block">
+              <Link href={`/collections?genre=${genre.name}`} className="block">
                 <Image
                   width={200}
                   height={500}

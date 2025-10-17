@@ -2,22 +2,57 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import { api } from "@/lib/axios";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [email, setEmail]     = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+
+  // 🔐 Kalau sudah login, redirect ke home
+  useEffect(() => {
+    const token = Cookies.get("token") || localStorage.getItem("token");
+    if (token) {
+      router.replace("/");
+    }
+  }, [router]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+
     try {
-      // TODO: panggil API register kamu di sini
-      // const res = await fetch("/api/register", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ username, email, password }) })
-      // if (res.ok) router.push("/login")
-      console.log({ username, email, password });
+      const res = await api.post("/api/auth/create-account", {
+        name,
+        username,
+        email,
+        password,
+      password_confirmation: passwordConfirmation,
+      });
+
+      const { access_token, user } = res.data;
+
+      // Simpan token & user
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("user", JSON.stringify(user));
+      Cookies.set("token", access_token, { expires: 7 });
+
+      // Redirect ke home
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      setError(
+        err.response?.data?.message || "Registration failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -25,7 +60,7 @@ export default function RegisterPage() {
 
   return (
     <div className="grid lg:grid-cols-2 min-h-screen">
-      {/* Ilustrasi kiri (desktop only) */}
+      {/* Ilustrasi kiri */}
       <div className="lg:block hidden">
         <Image
           src="/images/register.svg"
@@ -46,17 +81,35 @@ export default function RegisterPage() {
           </h2>
         </div>
 
+        {error && (
+          <p className="text-red-500 bg-red-100 p-4 rounded-md text-center font-semibold">
+            {error}
+          </p>
+        )}
+
         <form onSubmit={onSubmit} className="flex flex-col mt-11 gap-4">
-          <input
-            type="text"
-            className="input-text"
-            placeholder="Enter your username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            aria-label="Username"
-            autoComplete="username"
-          />
+          <div className="grid gap-4 lg:grid-cols-2 grid-cols-1">
+            <input
+              type="text"
+              className="input-text"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              aria-label="Name"
+              autoComplete="name"
+            />
+            <input
+              type="text"
+              className="input-text"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              aria-label="Username"
+              autoComplete="username"
+            />
+          </div>
           <input
             type="email"
             className="input-text"
@@ -75,7 +128,16 @@ export default function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             aria-label="Password"
-            autoComplete="new-password"
+            minLength={6}
+          />
+          <input
+            type="password"
+            className="input-text"
+            placeholder="Enter your password confirmation"
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+            required
+            aria-label="Password Confirmation"
             minLength={6}
           />
 

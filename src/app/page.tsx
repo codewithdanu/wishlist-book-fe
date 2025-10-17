@@ -42,12 +42,7 @@ export default async function HomePage() {
   const popularBooks = booksRes.books.slice(0, 8);
   const authors = authorsRes.authors.data;
   const genres = genresRes.genres;
-
-  console.log(popularBooks)
-
-  // Visitor counter (increment) → dilakukan client-side agar IP unik per user
-  // Total visitor diambil client-side di <StatsCounter />
-
+  
   return (
     <>
       <div className="flex">
@@ -103,7 +98,7 @@ export default async function HomePage() {
                 <Link
                   key={book.id}
                   className="hover:-translate-y-2 duration-500"
-                  href={`/books/${book.id}`}
+                  href={`/books/${book.slug}`}
                 >
                   <Image
                     width={300}

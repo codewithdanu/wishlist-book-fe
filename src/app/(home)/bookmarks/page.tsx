@@ -4,54 +4,22 @@ import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useRef } from "react";
-import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import BookSwiper from "@/components/bookmarks/BookSwiper";
+import { api } from "@/lib/axios";
+import Cookies from "js-cookie";
 
-const bookSaved = [
-  {
-    href: "/books/harry-potter-and-the-philosopher-stone",
-    img: "/images/books/harry-potter-and-the-philosopher-stone.jpg",
-    title: "Harry Potter and The Philosopher Stone",
-    author: "J.K. Rowling",
-    rating: 5,
-  },
-  {
-    href: "/books/harry-potter-and-the-chamber-secrets",
-    img: "/images/books/harry-potter-and-the-chamber-secrets.jpg",
-    title: "Harry Potter and The Chamber of Secrets",
-    author: "J.K. Rowling",
-    rating: 5,
-  },
-  {
-    href: "/books/harry-potter-and-the-prisoner-of-azkaban",
-    img: "/images/books/harry-potter-and-the-prisoner-of-azkaban.jpg",
-    title: "Harry Potter and The Prisoner of Azkaban",
-    author: "J.K. Rowling",
-    rating: 5,
-  },
-  {
-    href: "/books/harry-potter-and-the-goblet-of-fire",
-    img: "/images/books/harry-potter-and-the-goblet-of-fire.jpg",
-    title: "Harry Potter and The Goblet of Fire",
-    author: "J.K. Rowling",
-    rating: 5,
-  },
-  {
-    href: "/books/the-outsider",
-    img: "/images/books/the-outsider.jpeg",
-    title: "The Outsider",
-    author: "Stephen King",
-    rating: 4,
-  },
-  {
-    href: "/books/the-shining",
-    img: "/images/books/the-shining.jpeg",
-    title: "The Shining",
-    author: "Stephen King",
-    rating: 4,
-  },
-];
+interface Book {
+  id: number;
+  slug: string;
+  title: string;
+  image: string;
+  ratings_avg_rating?: number;
+  author: {
+    name: string;
+  };
+}
 
 const lastReading = [
   {
@@ -68,69 +36,45 @@ const lastReading = [
     author: "Stephen King",
     rating: 4,
   },
-  {
-    href: "/books/fairy-tale",
-    img: "/images/books/fairy-tale.jpeg",
-    title: "Fairy Tale",
-    author: "Stephen King",
-    rating: 5,
-  },
-  {
-    href: "/books/harry-potter-and-the-philosopher-stone",
-    img: "/images/books/harry-potter-and-the-philosopher-stone.jpg",
-    title: "Harry Potter and The Philosopher Stone",
-    author: "J.K. Rowling",
-    rating: 5,
-  },
-  {
-    href: "/books/harry-potter-and-the-chamber-secrets",
-    img: "/images/books/harry-potter-and-the-chamber-secrets.jpg",
-    title: "Harry Potter and The Chamber of Secrets",
-    author: "J.K. Rowling",
-    rating: 5,
-  },
-  {
-    href: "/books/harry-potter-and-the-prisoner-of-azkaban",
-    img: "/images/books/harry-potter-and-the-prisoner-of-azkaban.jpg",
-    title: "Harry Potter and The Prisoner of Azkaban",
-    author: "J.K. Rowling",
-    rating: 5,
-  },
-  {
-    href: "/books/manusia-setengah-salmon",
-    img: "/images/books/manusia-setengah-salmon.jpg",
-    title: "Manusia Setengah Salmon",
-    author: "Raditya Dika",
-    rating: 4,
-  },
-  {
-    href: "/books/marmut-merah-jambu",
-    img: "/images/books/marmut-merah-jambu.jpg",
-    title: "Marmut Merah Jambu",
-    author: "Raditya Dika",
-    rating: 5,
-  },
-  {
-    href: "/books/laut-bercerita",
-    img: "/images/books/laut-bercerita.jpg",
-    title: "Laut Bercerita",
-    author: "Leila S. Chudori",
-    rating: 4,
-  },
-  {
-    href: "/books/the-hunger-games",
-    img: "/images/books/the-hunger-games.jpeg",
-    title: "The Hunger Games",
-    author: "Suzanne Collins",
-    rating: 4,
-  },
 ];
 
 export default function BookmarksPage() {
+  const [savedBooks, setSavedBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const savedPrevRef = useRef<HTMLButtonElement | null>(null);
   const savedNextRef = useRef<HTMLButtonElement | null>(null);
   const lastPrevRef = useRef<HTMLButtonElement | null>(null);
   const lastNextRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const token = Cookies.get("token") || localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await api.get("/api/wishlist-books", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setSavedBooks(res.data.wishlist_books);
+      } catch (err) {
+        console.error("Failed to load wishlist:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWishlist();
+  }, []);
+
+  const formattedSavedBooks = savedBooks.map((book) => ({
+    href: `/books/${book.slug}`,
+    img: `${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`,
+    title: book.title,
+    author: book.author?.name ?? "-",
+    rating: Math.round(book.ratings_avg_rating ?? 0),
+  }));
 
   return (
     <>
@@ -138,7 +82,6 @@ export default function BookmarksPage() {
         <Sidebar />
         <MobileNav />
 
-        {/* Main */}
         <main className="ml-auto container mx-5 sm:mx-auto relative z-10 mb-[100px]">
           <Navbar />
 
@@ -146,7 +89,7 @@ export default function BookmarksPage() {
             <h1 className="font-[georgia] font-bold sm:text-[50px] text-[32px]">
               Keep the story going...
             </h1>
-            <p className="mt-[30px] mb-[50px] text-textColor/80/80">
+            <p className="mt-[30px] mb-[50px] text-textColor/80">
               Don’t let the story end just yet. Continue reading your last book <br />
               and immerse yourself in the world of literature
             </p>
@@ -160,7 +103,6 @@ export default function BookmarksPage() {
               <h2 className="font-[georgia] font-bold text-[28px]">
                 Book Saved
               </h2>
-              {/* Tombol navigasi */}
               <div className="flex items-center gap-2">
                 <button
                   ref={savedPrevRef}
@@ -179,22 +121,26 @@ export default function BookmarksPage() {
               </div>
             </div>
 
-            {/* book saved swiper */}
-            <BookSwiper
-                books={bookSaved}
+            {loading ? (
+              <p className="text-center text-gray-500">Loading your saved books...</p>
+            ) : formattedSavedBooks.length === 0 ? (
+              <p className="text-center text-gray-500">No saved books yet.</p>
+            ) : (
+              <BookSwiper
+                books={formattedSavedBooks}
                 prevRef={savedPrevRef}
                 nextRef={savedNextRef}
                 swiperClass="book-saved-swiper"
               />
+            )}
           </section>
 
           {/* Last Reading */}
           <section>
-             <div className="flex justify-between mb-10">
+            <div className="flex justify-between mb-10">
               <h2 className="font-[georgia] font-bold text-[28px]">
                 Last Reading
               </h2>
-              {/* Tombol navigasi */}
               <div className="flex items-center gap-2">
                 <button
                   ref={lastPrevRef}
@@ -213,7 +159,6 @@ export default function BookmarksPage() {
               </div>
             </div>
 
-            {/* last reading swipe */}
             <BookSwiper
               books={lastReading}
               prevRef={lastPrevRef}

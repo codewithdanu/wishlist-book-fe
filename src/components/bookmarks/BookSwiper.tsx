@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star } from "lucide-react";
 import type SwiperCore from "swiper";
+import useAuthGuard from "@/hooks/useAuthGuard";
 
 declare global {
   interface Window {
@@ -54,6 +55,8 @@ export default function BookSwiper({
   nextRef,
   swiperClass,
 }: BookSwiperProps) {
+  useAuthGuard();
+
   const swiperInstanceRef = useRef<SwiperCore | null>(null);
 
   useEffect(() => {

@@ -2,24 +2,54 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import { api } from "@/lib/axios";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = Cookies.get("token") || localStorage.getItem("token");
+    if (token) {
+      router.replace("/");
+    }
+  }, [router]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: panggil API login kamu di sini
-    // contoh:
-    // const res = await fetch("/api/login", { method: "POST", body: JSON.stringify({ email, password }) })
-    // if (res.ok) router.push("/")
-    console.log({ email, password });
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await api.post("/api/auth/login", { email, password });
+      const { access_token, user } = res.data;
+
+      // Simpan token dan user ke localStorage
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("user", JSON.stringify(user));
+      Cookies.set("token", access_token, { expires: 7 });
+
+      // Redirect ke home
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      setError(
+        err.response?.data?.message || "Login failed. Please check your credentials."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="grid lg:grid-cols-2 min-h-screen">
-      {/* Ilustrasi kiri (desktop only) */}
+      {/* kiri */}
       <div className="lg:block hidden">
         <Image
           src="/images/login.svg"
@@ -31,7 +61,7 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* Form kanan */}
+      {/* kanan */}
       <div className="flex flex-col justify-center xl:mx-[125px] lg:mt-0 mt-[100px] sm:mx-[100px] mx-5">
         <div className="text-center mb-6">
           <h1 className="text-[40px] font-bold text-mainColor">Welcome Back</h1>
@@ -39,6 +69,12 @@ export default function LoginPage() {
             Please Login Your Account
           </h2>
         </div>
+
+        {error && (
+          <p className="text-red-500 bg-red-100 p-4 rounded-md text-center font-semibold">
+            {error}
+          </p>
+        )}
 
         <form onSubmit={onSubmit} className="flex flex-col mt-11 gap-4">
           <input
@@ -48,8 +84,6 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            aria-label="Email"
-            autoComplete="email"
           />
           <input
             type="password"
@@ -58,12 +92,10 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            aria-label="Password"
-            autoComplete="current-password"
           />
 
-          <button type="submit" className="btn-auth">
-            Login
+          <button type="submit" className="btn-auth" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
 
           <p className="text-[#272B2C]/50 text-center">

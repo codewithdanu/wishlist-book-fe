@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import Navbar from "@/components/Navbar";
@@ -9,8 +10,7 @@ import FilterSidebar from "@/components/collections/FilterSidebar";
 import BookGrid from "@/components/collections/BookGrid";
 import SortDropdown from "@/components/collections/SortDropdown";
 import Pagination from "@/components/collections/Pagination";
-import { API_BASE_URL } from "@/lib/api";
-import { useSearchParams } from "next/navigation";
+import { api } from "@/lib/axios";
 
 interface Book {
   id: number;
@@ -35,50 +35,82 @@ const STATIC_LANGUAGES = [
 ];
 
 export default function CollectionsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const initialSearch = searchParams.get("search") ?? "";
 
+  // 🧭 Ambil initial value dari URL
+  const initialSearch = searchParams.get("search") ?? "";
+  const initialGenres = searchParams.get("genres")?.split(",") ?? [];
+  const initialLanguages = searchParams.get("languages")?.split(",") ?? [];
+  const initialSort = searchParams.get("sort") ?? "latest";
+  const initialPage = Number(searchParams.get("page") ?? 1);
+
+  // 🧠 State
   const [books, setBooks] = useState<Book[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [search, setSearch] = useState(initialSearch);
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-  const [sort, setSort] = useState<string>("latest");
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>(initialGenres);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(initialLanguages);
+  const [sort, setSort] = useState<string>(initialSort);
+  const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [totalBooks, setTotalBooks] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const perPage = 12;
 
-  // Fetch genres once
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/genres`)
-      .then((res) => res.json())
-      .then((data) => setGenres(data.genres || []));
-  }, []);
-
-  // Fetch books whenever filters change
+  // 🟡 Update URL setiap kali filter berubah
   useEffect(() => {
     const params = new URLSearchParams();
-    if (search) params.append("search", search);
-    if (selectedGenres.length > 0)
-      selectedGenres.forEach((g) => params.append("genres[]", g));
-    if (selectedLanguages.length > 0)
-      selectedLanguages.forEach((l) => params.append("languages[]", l));
-    if (sort) params.append("sort", sort);
-    params.append("page", currentPage.toString());
-    params.append("perPage", "12");
+    if (search) params.set("search", search);
+    if (selectedGenres.length > 0) params.set("genres", selectedGenres.join(","));
+    if (selectedLanguages.length > 0) params.set("languages", selectedLanguages.join(","));
+    if (sort) params.set("sort", sort);
+    if (currentPage > 1) params.set("page", currentPage.toString());
 
-    fetch(`${API_BASE_URL}/api/books?${params.toString()}`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data)
-        setBooks(data.books.data || []);
-        setTotalBooks(data.meta?.total ?? 0);
-        setTotalPages(data.meta?.last_page ?? 1);
-      });
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [search, selectedGenres, selectedLanguages, sort, currentPage, pathname, router]);
+
+  // 🟢 Fetch genres
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const res = await api.get("/api/genres");
+        setGenres(res.data.genres || []);
+      } catch (error) {
+        console.error("Failed to fetch genres:", error);
+      }
+    };
+    fetchGenres();
+  }, []);
+
+  // 🟢 Fetch books setiap filter berubah
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (search) params.append("search", search);
+        selectedGenres.forEach((g) => params.append("genres[]", g));
+        selectedLanguages.forEach((l) => params.append("languages[]", l));
+        if (sort) params.append("sort", sort);
+        params.append("page", currentPage.toString());
+        params.append("perPage", perPage.toString());
+
+        const res = await api.get(`/api/books?${params.toString()}`);
+        const payload = res.data.books;
+
+        setBooks(payload.data || []);
+        setTotalBooks(payload.total ?? 0);
+        setTotalPages(payload.last_page ?? 1);
+      } catch (error) {
+        console.error("Failed to fetch books:", error);
+      }
+    };
+
+    fetchBooks();
   }, [search, selectedGenres, selectedLanguages, sort, currentPage]);
 
-  const startIndex = (currentPage - 1) * 12 + 1;
-  const endIndex = Math.min(currentPage * 12, totalBooks);
+  const startIndex = (currentPage - 1) * perPage + 1;
+  const endIndex = Math.min(currentPage * perPage, totalBooks);
 
   return (
     <>
@@ -90,7 +122,7 @@ export default function CollectionsPage() {
           <Navbar />
 
           <div className="grid grid-cols-12 gap-12">
-            {/* Filter Sidebar */}
+            {/* 🧭 Sidebar Filter */}
             <div className="xl:col-span-3 lg:col-span-5 col-span-12">
               <FilterSidebar
                 genres={genres}
@@ -104,7 +136,7 @@ export default function CollectionsPage() {
               />
             </div>
 
-            {/* Main Content */}
+            {/* 📚 Main Content */}
             <div className="xl:col-span-9 lg:col-span-7 col-span-12">
               <div className="flex justify-between items-center mb-4">
                 <h2
@@ -116,7 +148,7 @@ export default function CollectionsPage() {
                 <SortDropdown value={sort} onChange={setSort} />
               </div>
 
-              {/* Results Info */}
+              {/* Info */}
               <p
                 className="mt-5 mb-2.5"
                 style={{ fontFamily: "var(--font-urbanist)" }}
@@ -128,13 +160,15 @@ export default function CollectionsPage() {
                     color: "#e45f65",
                   }}
                 >
-                  {search || selectedGenres.length > 0 || selectedLanguages.length > 0
+                  {search ||
+                  selectedGenres.length > 0 ||
+                  selectedLanguages.length > 0
                     ? "Your filters"
                     : "All Books"}
                 </span>
               </p>
 
-              {/* Book Grid */}
+              {/* Grid */}
               <BookGrid books={books} />
 
               {/* Pagination */}

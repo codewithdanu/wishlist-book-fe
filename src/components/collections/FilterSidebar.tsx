@@ -21,9 +21,9 @@ export default function FilterSidebar({
   selectedLanguages,
   setSelectedLanguages,
 }: Props) {
-  const toggleGenre = (id: string) => {
+  const toggleGenre = (name: string) => {
     setSelectedGenres((prev) =>
-      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
+      prev.includes(name) ? prev.filter((g) => g !== name) : [...prev, name]
     );
   };
 
@@ -51,8 +51,8 @@ export default function FilterSidebar({
           <label key={g.id} className="flex items-center space-x-2">
             <input
               type="checkbox"
-              checked={selectedGenres.includes(String(g.id))}
-              onChange={() => toggleGenre(String(g.id))}
+              checked={selectedGenres.includes(g.name)}
+              onChange={() => toggleGenre(g.name)}
             />
             <span>{g.name}</span>
           </label>
