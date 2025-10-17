@@ -6,9 +6,9 @@ interface Props {
   search: string;
   setSearch: (v: string) => void;
   selectedGenres: string[];
-  setSelectedGenres: (v: string[]) => void;
+  setSelectedGenres: React.Dispatch<React.SetStateAction<string[]>>;
   selectedLanguages: string[];
-  setSelectedLanguages: (v: string[]) => void;
+  setSelectedLanguages: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export default function FilterSidebar({

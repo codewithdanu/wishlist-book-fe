@@ -16,14 +16,14 @@ interface Book {
   title: string;
   author: { name: string };
   image: string;
-  rating: number;
+  ratings_avg_rating: number;
 }
 
 interface Author {
   id: number;
   name: string;
   profile_photo: string;
-  books_count?: number;
+  books: Book[];
 }
 
 interface Genre {
@@ -34,9 +34,9 @@ interface Genre {
 
 export default async function HomePage() {
   const [booksRes, authorsRes, genresRes] = await Promise.all([
-    apiFetch<{ data: Book[] }>("/api/books"),
-    apiFetch<{ data: Author[] }>("/api/authors"),
-    apiFetch<{ data: Genre[] }>("/api/genres"),
+    apiFetch<{ books: Book[] }>("/api/books"),
+    apiFetch<{ authors: {data: Author[]} }>("/api/authors"),
+    apiFetch<{ genres: Genre[] }>("/api/genres"),
   ]);
 
   const popularBooks = booksRes.books.slice(0, 8);
