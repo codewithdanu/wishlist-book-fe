@@ -48,7 +48,7 @@ export default function Sidebar() {
                 <Icon className="w-5 h-5" aria-hidden="true" />
               </Link>
               <div className="absolute top-2 -right-20 hidden group-hover:flex flex-col items-center mb-5">
-                <span className="relative rounded-md z-10 p-4 text-xs leading-none text-white whitespace-nowrap bg-textColor shadow-lg">
+                <span className="relative rounded-md z-10 px-3 py-4 text-xs leading-none text-white whitespace-nowrap bg-textColor shadow-lg">
                   {label}
                 </span>
                 <div className="w-3 h-3 absolute -left-1 top-6 -mt-2 rotate-45 bg-textColor"></div>

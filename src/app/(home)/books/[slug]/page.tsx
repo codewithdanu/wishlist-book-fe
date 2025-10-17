@@ -22,7 +22,7 @@ import {
 export default function DetailPage() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const shareUrl = "https://novex.com/share";
+  const shareUrl = "https://wishlist-book-fe.vercel.app/share";
 
   const copyLink = async () => {
     try {

@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Wishlist Book – Temukan Buku Favoritmu 📚",
+  title: "Wishlist Book – Temukan Buku Favoritmu",
   description: "Platform untuk menemukan, menyimpan, dan membagikan buku favoritmu.",
   icons: {
     icon: "/favicon.ico",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Wishlist Book",
     description: "Platform untuk menemukan, menyimpan, dan membagikan buku favoritmu.",
-    url: "https://wishlist-book.com",
+    url: "https://wishlist-book-fe.vercel.app",
     siteName: "Wishlist Book",
     images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
     locale: "id_ID",
