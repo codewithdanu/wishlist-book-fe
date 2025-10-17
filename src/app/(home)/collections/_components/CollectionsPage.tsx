@@ -15,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 interface Book {
   id: number;
   title: string;
+  slug: string;
   image: string;
   author: { name: string };
   ratings_avg_rating: number;

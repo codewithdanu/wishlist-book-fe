@@ -5,6 +5,7 @@ import Link from "next/link";
 interface Book {
   id: number;
   title: string;
+  slug: string;
   image: string;
   author: { name: string };
   ratings_avg_rating: number;
@@ -20,7 +21,7 @@ export default function BookGrid({ books }: BookGridProps) {
       {books.map((book, index) => (
         <Link
           key={index}
-          href="/books/book-slug"
+          href={`/books/${book.slug}`}
           className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
         >
           <Image
