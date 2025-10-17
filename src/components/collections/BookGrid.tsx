@@ -1,11 +1,13 @@
+import { API_BASE_URL } from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
 
 interface Book {
+  id: number;
   title: string;
-  author: string;
   image: string;
-  rating: number;
+  author: { name: string };
+  ratings_avg_rating: number;
 }
 
 interface BookGridProps {
@@ -25,7 +27,7 @@ export default function BookGrid({ books }: BookGridProps) {
             width={300}
             height={400}
             className="w-full h-64 object-cover"
-            src={book.image}
+            src={API_BASE_URL + "/" + book.image}
             alt={book.title}
           />
           <div className="p-4">
@@ -35,12 +37,12 @@ export default function BookGrid({ books }: BookGridProps) {
             >
               {book.title}
             </h5>
-            <p className="text-gray-600 mt-1 mb-2">{book.author}</p>
+            <p className="text-gray-600 mt-1 mb-2">{book.author.name}</p>
             <div className="flex mt-1">
               {[...Array(5)].map((_, i) => (
                 <i
                   key={i}
-                  className={`${i < book.rating ? "fas" : "far"} fa-star mr-1`}
+                  className={`${i < book.ratings_avg_rating ? "fas" : "far"} fa-star mr-1`}
                   style={{ color: "#e45f65" }}
                 ></i>
               ))}

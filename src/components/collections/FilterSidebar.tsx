@@ -1,113 +1,77 @@
 "use client";
 
-import { useState } from "react";
+interface Props {
+  genres: { id: number; name: string }[];
+  languages: { code: string; name: string }[];
+  search: string;
+  setSearch: (v: string) => void;
+  selectedGenres: string[];
+  setSelectedGenres: (v: string[]) => void;
+  selectedLanguages: string[];
+  setSelectedLanguages: (v: string[]) => void;
+}
 
-const genres = [
-  "Fiction",
-  "Nonfiction",
-  "Romance",
-  "Fantasy",
-  "Science Fiction",
-  "Horror",
-  "Mystery",
-  "Thriller",
-  "Comedy",
-  "History",
-  "Psychology",
-  "Family",
-  "Adventure",
-  "Drama",
-  "Action",
-  "Slice of Life",
-  "Kingdom",
-];
-
-const languages = ["Indonesian", "English", "Japanese", "Korean"];
-
-export default function FilterSidebar() {
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-
-  const toggleGenre = (genre: string) => {
+export default function FilterSidebar({
+  genres,
+  languages,
+  search,
+  setSearch,
+  selectedGenres,
+  setSelectedGenres,
+  selectedLanguages,
+  setSelectedLanguages,
+}: Props) {
+  const toggleGenre = (id: string) => {
     setSelectedGenres((prev) =>
-      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre]
+      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
     );
   };
 
-  const toggleLanguage = (language: string) => {
+  const toggleLanguage = (code: string) => {
     setSelectedLanguages((prev) =>
-      prev.includes(language)
-        ? prev.filter((l) => l !== language)
-        : [...prev, language]
+      prev.includes(code)
+        ? prev.filter((l) => l !== code)
+        : [...prev, code]
     );
   };
 
   return (
-    <aside className="bg-white rounded-lg p-6 shadow-md">
-      <div className="flex justify-between items-center mb-4">
-        <h3
-          className="font-bold text-xl"
-          style={{ fontFamily: "georgia, serif" }}
-        >
-          Filter
-        </h3>
-        <button
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-          style={{ fontFamily: "var(--font-urbanist-medium)" }}
-        >
-          Apply
-        </button>
+    <div className="bg-white p-4 rounded-lg shadow">
+      <input
+        type="text"
+        placeholder="Search books..."
+        className="w-full border px-3 py-2 rounded mb-4"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      <h4 className="font-bold mb-2">Genres</h4>
+      <div className="space-y-1 mb-4">
+        {genres.map((g) => (
+          <label key={g.id} className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={selectedGenres.includes(String(g.id))}
+              onChange={() => toggleGenre(String(g.id))}
+            />
+            <span>{g.name}</span>
+          </label>
+        ))}
       </div>
 
-      {/* Genres Filter */}
-      <details className="mb-4" open>
-        <summary
-          className="cursor-pointer font-medium py-2"
-          style={{ fontFamily: "var(--font-urbanist-medium)" }}
-        >
-          Genres
-        </summary>
-        <ul className="mt-2 space-y-2">
-          {genres.map((genre) => (
-            <li key={genre}>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="form-checkbox text-red-500"
-                  checked={selectedGenres.includes(genre)}
-                  onChange={() => toggleGenre(genre)}
-                />
-                <span>{genre}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </details>
-
-      {/* Languages Filter */}
-      <details className="mb-4">
-        <summary
-          className="cursor-pointer font-medium py-2"
-          style={{ fontFamily: "var(--font-urbanist-medium)" }}
-        >
-          Languages
-        </summary>
-        <ul className="mt-2 space-y-2">
-          {languages.map((language) => (
-            <li key={language}>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="form-checkbox text-red-500"
-                  checked={selectedLanguages.includes(language)}
-                  onChange={() => toggleLanguage(language)}
-                />
-                <span>{language}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </details>
-    </aside>
+      <h4 className="font-bold mb-2">Languages</h4>
+      <div className="space-y-1">
+        {languages.map((l) => (
+          <label key={l.name} className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={selectedLanguages.includes(l.name)}
+              onChange={() => toggleLanguage(l.name)}
+            />
+            <span>{l.name}</span>
+          </label>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -3,47 +3,51 @@ import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import Navbar from "@/components/Navbar";
-import StatsCounter from "@/components/StatsCounter";
 import GenreSwiper from "@/components/GenreSwiper";
+import StatsCounter from "@/components/StatsCounter";
 import Footer from "@/components/Footer";
+import { apiFetch } from "@/lib/api";
+import { Star } from "lucide-react";
 
-const popularBooks = [
-  {
-    title: "Harry Potter and The Cursed Child",
-    author: "J.K. Rowling",
-    image: "/images/books/harry-potter-and-the-cursed-child.jpg",
-    rating: 5,
-  },
-  {
-    title: "The Shining",
-    author: "Stephen King",
-    image: "/images/books/the-shining.jpeg",
-    rating: 5,
-  },
-  {
-    title: "Koala Kumal",
-    author: "Raditya Dika",
-    image: "/images/books/koala-kumal.jpg",
-    rating: 4,
-  },
-  {
-    title: "Laut Bercerita",
-    author: "Leila S. Chudori",
-    image: "/images/books/laut-bercerita.jpg",
-    rating: 4,
-  },
-];
+export const dynamic = "force-static"; // cache page
 
-const authors = [
-  { name: "J.K. Rowling", books: 24, image: "/images/authors/jk-rowling.svg" },
-  { name: "Stephen King", books: 65, image: "/images/authors/stephen-king.svg" },
-  { name: "Suzzane Collins", books: 71, image: "/images/authors/suzanne-collins.svg" },
-  { name: "Raditya Dika", books: 17, image: "/images/authors/raditya-dika.svg" },
-  { name: "Leila S. Chudori", books: 10, image: "/images/authors/leila-s-chudori.svg" },
-  { name: "Ernest Prakasa", books: 5, image: "/images/authors/ernest-prakasa.svg" },
-];
+interface Book {
+  id: number;
+  title: string;
+  author: { name: string };
+  image: string;
+  rating: number;
+}
 
-export default function Home() {
+interface Author {
+  id: number;
+  name: string;
+  profile_photo: string;
+  books_count?: number;
+}
+
+interface Genre {
+  id: number;
+  name: string;
+  image: string;
+}
+
+export default async function HomePage() {
+  const [booksRes, authorsRes, genresRes] = await Promise.all([
+    apiFetch<{ data: Book[] }>("/api/books"),
+    apiFetch<{ data: Author[] }>("/api/authors"),
+    apiFetch<{ data: Genre[] }>("/api/genres"),
+  ]);
+
+  const popularBooks = booksRes.books.slice(0, 8);
+  const authors = authorsRes.authors.data;
+  const genres = genresRes.genres;
+
+  console.log(popularBooks)
+
+  // Visitor counter (increment) → dilakukan client-side agar IP unik per user
+  // Total visitor diambil client-side di <StatsCounter />
+
   return (
     <>
       <div className="flex">
@@ -65,10 +69,7 @@ export default function Home() {
               <p className="my-[30px]">
                 Novex is an online platform that provides easy and convenient access to read novels.
                 With a diverse and continuously updated collection of novels, Novex allows users to
-                enjoy various genres and engaging stories at their fingertips. Designed for user
-                convenience, the Novex website offers a user-friendly interface, intuitive
-                navigation, and search features that make it easy for readers to find their favorite
-                novels quickly.
+                enjoy various genres and engaging stories at their fingertips.
               </p>
               <Link href="/collections" className="btn text-center">
                 Explore Now
@@ -86,11 +87,11 @@ export default function Home() {
             </div>
           </header>
 
-          {/* Stats Counter */}
+          {/* Visitor Counter & Stats */}
           <StatsCounter />
 
           {/* Genre Swiper */}
-          <GenreSwiper />
+          <GenreSwiper genres={genres} />
 
           {/* Popular Books */}
           <section>
@@ -100,31 +101,34 @@ export default function Home() {
             <div className="grid lg:grid-cols-4 xs:grid-cols-2 grid-cols-1 gap-10">
               {popularBooks.map((book) => (
                 <Link
-                  key={book.title}
+                  key={book.id}
                   className="hover:-translate-y-2 duration-500"
-                  href="/detail"
+                  href={`/books/${book.id}`}
                 >
                   <Image
                     width={300}
                     height={400}
                     className="w-full rounded"
-                    src={book.image}
+                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`}
                     alt={book.title}
                   />
                   <h5 className="font-urbanistSemibold text-[18px] mt-2.5">
                     {book.title}
                   </h5>
                   <p className="text-textColor/80 mt-1.5 mb-2.5">
-                    {book.author}
+                    {book.author?.name}
                   </p>
                   <div className="flex">
                     {[...Array(5)].map((_, i) => (
-                      <i
+                      <Star
                         key={i}
-                        className={`${
-                          i < book.rating ? "fas" : "far"
-                        } fa-star mr-1 text-mainColor`}
-                      ></i>
+                        size={18}
+                        className={`mr-1 ${
+                          i < Math.round(Number(book.ratings_avg_rating))
+                            ? "fill-mainColor text-mainColor"
+                            : "text-mainColor stroke-[1.5]"
+                        }`}
+                      />
                     ))}
                   </div>
                 </Link>
@@ -140,7 +144,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Authors Section */}
+          {/* Authors */}
           <section>
             <h1 className="font-[georgia] font-bold text-[32px] mb-10">
               New Author Collection
@@ -148,14 +152,14 @@ export default function Home() {
             <div className="grid xl:grid-cols-3 lg:grid-cols-2 grid-cols-1 gap-10">
               {authors.map((author) => (
                 <div
-                  key={author.name}
+                  key={author.id}
                   className="flex 2xs:flex-row flex-col 2xs:items-center items-start duration-300 hover:brightness-90"
                 >
                   <Image
                     width={150}
                     height={150}
-                    className="mr-5 rounded 2xs:w-[150px] w-full 2xl:mb-0 mb-2"
-                    src={author.image}
+                    className="mr-5 rounded-full aspect-square object-cover 2xs:w-[150px] w-full 2xl:mb-0 mb-2"
+                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${author.profile_photo}`}
                     alt={author.name}
                   />
                   <div>
@@ -163,10 +167,10 @@ export default function Home() {
                       {author.name}
                     </h5>
                     <p className="text-textColor/80 mt-3 mb-5">
-                      {author.books} books have been published
+                      {author.books.length ?? 0} books have been published
                     </p>
                     <Link
-                      href="/detail"
+                      href={`/authors/${author.id}`}
                       className="text-center text-[12px] btn bg-textColor text-lightMode focus:ring-textColor/50 mt-16"
                     >
                       Read Book Series

@@ -1,5 +1,6 @@
-"use client"
+"use client";
 
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import Navbar from "@/components/Navbar";
@@ -8,33 +9,76 @@ import FilterSidebar from "@/components/collections/FilterSidebar";
 import BookGrid from "@/components/collections/BookGrid";
 import SortDropdown from "@/components/collections/SortDropdown";
 import Pagination from "@/components/collections/Pagination";
-import { useState } from "react";
+import { API_BASE_URL } from "@/lib/api";
+import { useSearchParams } from "next/navigation";
 
-const books = [
-  { title: "Harry Potter and The Philosopher Stone", author: "J.K. Rowling", image: "/images/books/harry-potter-and-the-philosopher-stone.jpg", rating: 5 },
-  { title: "Harry Potter and The Chamber of Secrets", author: "J.K. Rowling", image: "/images/books/harry-potter-and-the-chamber-secrets.jpg", rating: 5 },
-  { title: "Harry Potter and The Prisoner of Azkaban", author: "J.K. Rowling", image: "/images/books/harry-potter-and-the-prisoner-of-azkaban.jpg", rating: 5 },
-  { title: "Harry Potter and The Goblet of Fire", author: "J.K. Rowling", image: "/images/books/harry-potter-and-the-goblet-of-fire.jpg", rating: 5 },
-  { title: "Harry Potter and The Order of the Phoenix", author: "J.K. Rowling", image: "/images/books/harry-potter-and-the-order-of-the-phoenix.jpg", rating: 5 },
-  { title: "Harry Potter and The Half Blood Prince", author: "J.K. Rowling", image: "/images/books/harry-potter-and-the-half-blood-prince.jpg", rating: 5 },
-  { title: "Harry Potter and The Deathly Hallows", author: "J.K. Rowling", image: "/images/books/harry-potter-and-the-deathly-hallows.jpg", rating: 5 },
-  { title: "Harry Potter and The Cursed Child", author: "J.K. Rowling", image: "/images/books/harry-potter-and-the-cursed-child.jpg", rating: 5 },
-  { title: "It", author: "Stephen King", image: "/images/books/it.jpeg", rating: 5 },
-  { title: "Fairy Tale", author: "Stephen King", image: "/images/books/fairy-tale.jpeg", rating: 5 },
-  { title: "The Shining", author: "Stephen King", image: "/images/books/the-shining.jpeg", rating: 4 },
-  { title: "The Outsider", author: "Stephen King", image: "/images/books/the-outsider.jpeg", rating: 4 },
+interface Book {
+  id: number;
+  title: string;
+  image: string;
+  author: { name: string };
+  ratings_avg_rating: number;
+}
+
+interface Genre {
+  id: number;
+  name: string;
+}
+
+const STATIC_LANGUAGES = [
+  { code: "id", name: "Indonesian" },
+  { code: "en", name: "English" },
+  { code: "zh", name: "Chinese" },
+  { code: "ko", name: "Korean" },
+  { code: "ja", name: "Japanese" },
 ];
 
 export default function CollectionsPage() {
-    const [currentPage, setCurrentPage] = useState(1);
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") ?? "";
 
-    const totalBooks = 20;
-    const itemsPerPage = 12;
-    const totalPages = Math.ceil(totalBooks / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage + 1;
-    const endIndex = Math.min(currentPage * itemsPerPage, totalBooks);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [search, setSearch] = useState(initialSearch);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [sort, setSort] = useState<string>("latest");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalBooks, setTotalBooks] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
-  
+  // Fetch genres once
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/genres`)
+      .then((res) => res.json())
+      .then((data) => setGenres(data.genres || []));
+  }, []);
+
+  // Fetch books whenever filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.append("search", search);
+    if (selectedGenres.length > 0)
+      selectedGenres.forEach((g) => params.append("genres[]", g));
+    if (selectedLanguages.length > 0)
+      selectedLanguages.forEach((l) => params.append("languages[]", l));
+    if (sort) params.append("sort", sort);
+    params.append("page", currentPage.toString());
+    params.append("perPage", "12");
+
+    fetch(`${API_BASE_URL}/api/books?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data)
+        setBooks(data.books.data || []);
+        setTotalBooks(data.meta?.total ?? 0);
+        setTotalPages(data.meta?.last_page ?? 1);
+      });
+  }, [search, selectedGenres, selectedLanguages, sort, currentPage]);
+
+  const startIndex = (currentPage - 1) * 12 + 1;
+  const endIndex = Math.min(currentPage * 12, totalBooks);
+
   return (
     <>
       <div className="flex">
@@ -47,12 +91,20 @@ export default function CollectionsPage() {
           <div className="grid grid-cols-12 gap-12">
             {/* Filter Sidebar */}
             <div className="xl:col-span-3 lg:col-span-5 col-span-12">
-              <FilterSidebar />
+              <FilterSidebar
+                genres={genres}
+                languages={STATIC_LANGUAGES}
+                search={search}
+                setSearch={setSearch}
+                selectedGenres={selectedGenres}
+                setSelectedGenres={setSelectedGenres}
+                selectedLanguages={selectedLanguages}
+                setSelectedLanguages={setSelectedLanguages}
+              />
             </div>
 
             {/* Main Content */}
             <div className="xl:col-span-9 lg:col-span-7 col-span-12">
-              {/* Header with Sort */}
               <div className="flex justify-between items-center mb-4">
                 <h2
                   className="font-bold text-[24px]"
@@ -60,7 +112,7 @@ export default function CollectionsPage() {
                 >
                   Book Collections
                 </h2>
-                <SortDropdown />
+                <SortDropdown value={sort} onChange={setSort} />
               </div>
 
               {/* Results Info */}
@@ -68,15 +120,16 @@ export default function CollectionsPage() {
                 className="mt-5 mb-2.5"
                 style={{ fontFamily: "var(--font-urbanist)" }}
               >
-                Showing 1 – 12 books out of a total of 20 for
-                {" "}
+                Showing {startIndex} – {endIndex} books out of {totalBooks} for{" "}
                 <span
                   style={{
                     fontFamily: "var(--font-urbanist-bold)",
                     color: "#e45f65",
                   }}
                 >
-                  All Books
+                  {search || selectedGenres.length > 0 || selectedLanguages.length > 0
+                    ? "Your filters"
+                    : "All Books"}
                 </span>
               </p>
 
@@ -84,14 +137,14 @@ export default function CollectionsPage() {
               <BookGrid books={books} />
 
               {/* Pagination */}
-            <Pagination
+              <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 startIndex={startIndex}
                 endIndex={endIndex}
                 totalBooks={totalBooks}
                 onPageChange={setCurrentPage}
-            />
+              />
             </div>
           </div>
         </main>

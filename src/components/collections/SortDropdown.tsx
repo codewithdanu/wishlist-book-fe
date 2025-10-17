@@ -2,43 +2,42 @@
 
 import { useState } from "react";
 
-const sortOptions = ["Latest", "Oldest", "Most Popular", "Most Rated"];
+interface Props {
+  value: string;
+  onChange: (v: string) => void;
+}
 
-export default function SortDropdown() {
+const sortOptions = [
+  { label: "Latest", value: "latest" },
+  { label: "Oldest", value: "oldest" },
+  { label: "Most Popular", value: "popular" },
+  { label: "Most Rated", value: "rated" },
+];
+
+export default function SortDropdown({ value, onChange }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState("Latest");
 
   const handleSelect = (option: string) => {
-    setSelected(option);
+    onChange(option);
     setIsOpen(false);
   };
 
+  const currentLabel =
+    sortOptions.find((opt) => opt.value === value)?.label ?? "Latest";
+
   return (
-    <div className="relative w-[150px] h-2/4 mt-5">
-      {/* Dropdown Button */}
+    <div className="relative w-[170px] h-2/4 mt-5">
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-md shadow-sm cursor-pointer focus:outline-none focus:ring-1"
-        style={{
-          fontSize: '14px'
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(228, 95, 101, 0.5)';
-          e.currentTarget.style.boxShadow = '0 0 0 1px rgba(228, 95, 101, 0.5)';
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.borderColor = '#d1d5db';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-md shadow-sm cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#e45f65]"
+        style={{ fontSize: "14px" }}
       >
-        <span className="flex items-center">
-          <span className="block ml-3 truncate">{selected}</span>
-        </span>
-        <span className="absolute inset-y-0 right-0 flex items-center pr-2 ml-3 pointer-events-none">
+        <span className="block ml-3 truncate">{currentLabel}</span>
+        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <svg
             className="w-5 h-5"
-            style={{ fill: '#9ca3af' }}
+            style={{ fill: "#9ca3af" }}
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -52,43 +51,25 @@ export default function SortDropdown() {
         </span>
       </button>
 
-      {/* Dropdown Menu */}
       {isOpen && (
-        <ul
-          className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white border border-gray-300 rounded-md shadow-lg max-h-56 focus:outline-none"
-          style={{ fontSize: '14px' }}
-        >
+        <ul className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white border border-gray-300 rounded-md shadow-lg max-h-56 focus:outline-none">
           {sortOptions.map((option) => (
             <li
-              key={option}
-              onClick={() => handleSelect(option)}
-              className="relative py-2 pl-3 pr-9 cursor-pointer select-none"
-              style={{
-                backgroundColor: selected === option ? 'rgba(228, 95, 101, 0.8)' : 'white',
-                color: selected === option ? 'white' : '#111827'
-              }}
-              onMouseEnter={(e) => {
-                if (selected !== option) {
-                  e.currentTarget.style.backgroundColor = 'rgba(228, 95, 101, 0.8)';
-                  e.currentTarget.style.color = 'white';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selected !== option) {
-                  e.currentTarget.style.backgroundColor = 'white';
-                  e.currentTarget.style.color = '#111827';
-                }
-              }}
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              className={`relative py-2 pl-3 pr-9 cursor-pointer select-none ${
+                value === option.value
+                  ? "bg-[#e45f65] text-white"
+                  : "text-[#111827] hover:bg-[#e45f65] hover:text-white"
+              }`}
+              style={{ fontSize: "14px" }}
             >
-              <div className="flex items-center">
-                <span className="block ml-3 font-normal truncate">{option}</span>
-              </div>
-
-              {selected === option && (
+              {option.label}
+              {value === option.value && (
                 <span className="absolute inset-y-0 right-0 flex items-center pr-4">
                   <svg
                     className="w-5 h-5"
-                    style={{ fill: 'white' }}
+                    style={{ fill: "white" }}
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
                     fill="currentColor"
